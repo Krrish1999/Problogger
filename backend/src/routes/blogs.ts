@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
+import { createBlogInput, updateBlogInput } from "@krrish_5/medium-common";
 interface JWTPayload {
     id: string;
     // add other JWT payload fields if needed
@@ -41,6 +42,13 @@ blogRoute.use('/*', async(c, next) =>{
 blogRoute.post('/', async (c) => {
     try {
         const body = await c.req.json();
+        const createBlog =  createBlogInput.safeParse(body)
+        if(!createBlog.success){
+            c.status(411)
+            return c.json({
+                "message":"Invalid input fields"
+            })
+        }
         const userId = c.get("userId");
         
         const prisma = new PrismaClient({
@@ -69,6 +77,13 @@ blogRoute.post('/', async (c) => {
 
 blogRoute.put('/', async (c) => {
     const body = await c.req.json();
+    const updateBlog =  updateBlogInput.safeParse(body)
+    if(!updateBlog.success){
+        c.status(411)
+        return c.json({
+            "message":"Invalid input fields"
+        })
+    }
     const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate())

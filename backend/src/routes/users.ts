@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { Hono } from 'hono'
 import { decode, sign, verify } from 'hono/jwt'
+import { signinInput, signupInput } from '@krrish_5/medium-common'
 
 
 export const userRouter = new Hono<{
@@ -18,6 +19,13 @@ userRouter.post('/signup', async(c) => {
 
   try {
         const body = await c.req.json()
+        const signup =  signupInput.safeParse(body)
+        if(!signup.success){
+            c.status(411)
+            return c.json({
+                "message":"Invalid creds not matching with input fields"
+            })
+        }
         const user = await prisma.user.create({
             data: {
                 email: body.email,
@@ -50,12 +58,21 @@ userRouter.post('/signin', async(c) => {
   }).$extends(withAccelerate())
 
   const body = await  c.req.json()
+  const signin =  signinInput.safeParse(body)
+  if(!signin.success){
+        c.status(411)
+        return c.json({
+            "message":"Invalid email format"
+        })
+    }
 
   const user = await prisma.user.findFirst({
     where: {
       email: body.email
     }
+
   });
+
   if (!user) {
     return c.json({ error: "User does not exist" }, 400)
  
