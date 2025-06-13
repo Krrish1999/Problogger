@@ -9,7 +9,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import CodeBlock from '@tiptap/extension-code-block';
 import Underline from '@tiptap/extension-underline';
 import Document from '@tiptap/extension-document'
-import CharacterCount from '@tiptap/extension-character-count'
+
 
 import '../style.scss';
 import { Bold, Italic,CodeIcon, Link2, Image as LucideImage, Quote, List, ListOrdered, Strikethrough, } from 'lucide-react';

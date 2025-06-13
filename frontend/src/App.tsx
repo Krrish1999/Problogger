@@ -4,9 +4,7 @@ import { Blog } from "./pages/Blog";
 import { Blogs } from "./pages/Blogs";
 import { Signin } from "./pages/Signin";
 import { CreateBlog } from "./pages/CreateBlog";
-import Tiptap from "./Tiptap";
-import { Edit } from "lucide-react";
-import MediumEditor from "./components/Editor";
+
 
 function App(){
     return(
