@@ -28,6 +28,7 @@ userRouter.post('/signup', async(c) => {
         }
         const user = await prisma.user.create({
             data: {
+                name:body.name,
                 email: body.email,
                 password: body.password,
             }
@@ -83,7 +84,7 @@ userRouter.post('/signin', async(c) => {
   }
   const payload = {
     id: user.id,
-    exp: Math.floor(Date.now() / 1000) + 60 * 5, // Token expires in 5 minutes
+    exp: Math.floor(Date.now() / 1000) + 60 * 20, // Token expires in 5 minutes
   }
 
   const token = await sign(payload, c.env.JWT_SECRET)

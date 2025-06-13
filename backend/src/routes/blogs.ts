@@ -3,10 +3,13 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { createBlogInput, updateBlogInput } from "@krrish_5/medium-common";
+import { z } from 'zod'
+import { zValidator } from "@hono/zod-validator";
 interface JWTPayload {
     id: string;
     // add other JWT payload fields if needed
 }
+
 
 export const blogRoute = new Hono<{
     Bindings:{
@@ -18,10 +21,15 @@ export const blogRoute = new Hono<{
     }
 }>();
 
+const BlogSchema = z.object({
+  content: z.string()
+})
+
+
 blogRoute.use('/*', async(c, next) =>{
-    console.log("Middleware")
+
     const jwt = c.req.header('Authorization');
-    console.log("jwt",jwt)
+   
 	if (!jwt) {
 		c.status(401);
 		return c.json({ error: "unauthorized" });
@@ -29,7 +37,6 @@ blogRoute.use('/*', async(c, next) =>{
 	const token = jwt.split(' ')[1];
 	const payload = await verify(token, c.env.JWT_SECRET);
     const payloadId = payload.id
-    console.log("payload",payload)
 	if (!payload) {
 		c.status(401);
 		return c.json({ error: "unauthorized" });
@@ -39,17 +46,23 @@ blogRoute.use('/*', async(c, next) =>{
    
 })
 
-blogRoute.post('/', async (c) => {
+blogRoute.post('/', zValidator('json', BlogSchema), async (c) => {
     try {
-        const body = await c.req.json();
-        const createBlog =  createBlogInput.safeParse(body)
-        if(!createBlog.success){
-            c.status(411)
-            return c.json({
-                "message":"Invalid input fields"
-            })
+        const {content} = await c.req.json();
+        console.log("insdie post")
+        console.log("contetnbackend",content)
+      
+     if (!content || content.trim().length === 0) {
+        c.status(400);
+        return c.json({ message: "Content cannot be empty" });
         }
         const userId = c.get("userId");
+
+        const titleMatch = content.match(/<h1.*?>(.*?)<\/h1>/i)
+        console.log('titleMatch', titleMatch)
+        const title = titleMatch ? titleMatch[1] : 'Untitled Post'
+        console.log(title,"title")
+
         
         const prisma = new PrismaClient({
             datasourceUrl: c.env.DATABASE_URL,
@@ -57,16 +70,19 @@ blogRoute.post('/', async (c) => {
         
         const post = await prisma.post.create({
             data: {
-                title: body.title,
-                content: body.content,
-                authorId: userId
+                
+                title: title,
+                content: content,
+                authorId: userId,
+            
             }
         });
+
         
         return c.json({
             id: post.id,
-            title: body.title,
-            content: body.content,
+            title: title,
+            content:content,
             
         }, 201);
     } catch (error) {
@@ -113,10 +129,22 @@ blogRoute.get('/bulk', async (c) => {
         datasourceUrl: c.env.DATABASE_URL,
       }).$extends(withAccelerate())
 
-    const post = await prisma.post.findMany();
+    const blogs = await prisma.post.findMany({
+        select:{
+            id:true,
+            title:true,
+            content:true,
+            author:{
+                select:{
+                    name:true
+                }
+            },
+            updatedAt:true
+        }
+    });
 
     return c.json({
-        post
+        blogs
     },200)
 })
 
@@ -130,9 +158,19 @@ blogRoute.get('/:id', async(c) => {
     try{
         const post = await prisma.post.findFirst({
             where:{
-                id : id
+                id : String(id)
+                
             },
-        
+            select:{
+                id: true,
+                title:true,
+                content :true,
+                author:{
+                    select:{
+                        name:true
+                    }
+                }
+            }
         })
         return c.json({
            post
@@ -143,18 +181,5 @@ blogRoute.get('/:id', async(c) => {
             message:"Error while fetching the data"
         })
     }
-})
-
-// Todo :add pagination
-blogRoute.get('/bulk', async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-      }).$extends(withAccelerate())
-
-    const post = await prisma.post.findMany();
-
-    return c.json({
-        post
-    },200)
 })
 
