@@ -1,5 +1,6 @@
 
 import  type {Blog} from "../hooks"
+import formatCustomDate from "../Utils";
 import { AppBar } from "./AppBar";
 import { Avatar } from "./BlogCard";
 
@@ -18,7 +19,7 @@ export const FullBlog = ({ blog }:{ blog:Blog }) => {
                             <h1>{blog.title}</h1>
                         </div>
                         <div className=" text-slate-400  pt-2">
-                            Posted on 2nd Decemebr 2025
+                            {formatCustomDate(blog.updatedAt)}
                         </div>
                         <div className="pt-4">
                            <div dangerouslySetInnerHTML={{ __html: blog.content }} />;

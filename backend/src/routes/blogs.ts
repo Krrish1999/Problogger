@@ -169,7 +169,8 @@ blogRoute.get('/:id', async(c) => {
                     select:{
                         name:true
                     }
-                }
+                },
+                updatedAt:true
             }
         })
         return c.json({
